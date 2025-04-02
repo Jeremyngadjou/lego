@@ -9,35 +9,38 @@ const cheerio = require('cheerio');
 const parse = data => {
   const $ = cheerio.load(data, {'xmlMode': true});
 
-  return $('div.prods a')
+  return $('div.content-list article')
     .map((i, element) => {
-      const price = parseFloat(
+      /*const price = parseFloat(
         $(element)
           .find('span.prodl-prix span')
           .text()
       );
-
+*/
       const discount = Math.abs(parseInt(
         $(element)
-          .find('span.prodl-reduc')
+          .find('textBadge--green')
           .text()
       ));
 
-      const image = $(element)
+      const title = $(element)
+      .find("strong.thread-title a").attr(title);
+
+      /*const image = $(element).find("span.imgFrame imgFrame--noBorder imgFrame--darken-new")
       .find('img')
       .attr('src');
 
       const ref = $(element)
       .find('span.prodl-ref')
       .text();
-
+*/
 
       return {
         discount,
-        price,
-        image,
-        ref,
-        'title': $(element).attr('title'),
+       // price,
+       // image,
+        //ref,
+        title,
       };
     })
     .get();

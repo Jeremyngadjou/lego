@@ -5,12 +5,11 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "type": "chrome",
+            "name": "Launch Chrome",
             "request": "launch",
-            "name": "Launch Chrome against localhost",
-            
-            "url": "file:///C:/Users/Ngadj/Documents/Informatique/lego/client/v2/index.html",
+            "type": "chrome",
+            "url": "file:///C:/Users/Ngadj/Documents/git project/lego/client/v2/index.html",
             "webRoot": "${workspaceFolder}"
-        }
+        },
     ]
 }
