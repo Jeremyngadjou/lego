@@ -20,9 +20,13 @@
         <select name="page" id="page-select"> </select>
       </div>
       <div id="filters">
-        <span>By best discount</span>
-        <span>By most commented</span>
-        <span>By hot deals</span>
+        <label for="filter-select">Filter:</label>
+  <select id="filter-select">
+    <option value="">-- Choose a filter --</option>
+    <option value="best-discount">By best discount</option>
+    <option value="most-commented">By most commented</option>
+    <option value="hot-deals">By hot deals</option>
+  </select>
       </div>
       <div id="sort">
         <label for="sort-select">Sort:</label>
@@ -34,6 +38,10 @@
         </select>
       </div>
     </section>
+    <section id="favorites">
+      <h2>Mes favoris</h2>
+      <div id="favorites-list"></div>
+    </section>    
     <section id="lego">
       <h2>Lego sets</h2>
       <div>
@@ -69,6 +77,7 @@
       </div>
     </section>
     <section id="deals"></section>
+    
     <script type="text/javascript" charset="UTF-8" src="utils.js"></script>
     <script type="text/javascript" charset="UTF-8" src="portfolio.js"></script>
   </body>

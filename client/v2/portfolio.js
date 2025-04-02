@@ -21,6 +21,7 @@ This endpoint accepts the following optional query string parameters:
 - `id` - lego set id to return
 */
 
+
 // current deals on the page
 let currentDeals = [];
 let currentPagination = {};
@@ -31,6 +32,8 @@ const selectPage = document.querySelector('#page-select');
 const selectLegoSetIds = document.querySelector('#lego-set-id-select');
 const sectionDeals= document.querySelector('#deals');
 const spanNbDeals = document.querySelector('#nbDeals');
+const selectFilter = document.querySelector('#filter-select');
+const selectSort = document.querySelector('#sort-select');
 
 /**
  * Set global value
@@ -67,6 +70,9 @@ const fetchDeals = async (page = 1, size = 6) => {
   }
 };
 
+// Assure-toi que favorites est initialisé comme un Set
+const favorites = new Set();
+
 /**
  * Render list of deals
  * @param  {Array} deals
@@ -81,6 +87,9 @@ const renderDeals = deals => {
         <span>${deal.id}</span>
         <a href="${deal.link}">${deal.title}</a>
         <span>${deal.price}</span>
+        <button class="favorite-btn" data-uuid="${deal.uuid}">
+          ${favorites.has(deal.uuid) ? 'Retirer des favoris' : 'Ajouter aux favoris'}
+        </button>
       </div>
     `;
     })
@@ -90,7 +99,24 @@ const renderDeals = deals => {
   fragment.appendChild(div);
   sectionDeals.innerHTML = '<h2>Deals</h2>';
   sectionDeals.appendChild(fragment);
+  
+  if (deals.length === 0) {
+    sectionDeals.innerHTML = '<p>Aucun deal trouvé avec ces critères.</p>';
+    return;
+  }
+  
 };
+
+const toggleFavorite = (uuid) => {
+  if (favorites.has(uuid)) {
+    favorites.delete(uuid);
+  } else {
+    favorites.add(uuid);
+  }
+  render(currentDeals, currentPagination);  // Mettre à jour l'affichage des deals
+  renderFavorites();  // Mettre à jour l'affichage des favoris
+};
+
 
 /**
  * Render page selector
@@ -107,18 +133,64 @@ const renderPagination = pagination => {
   selectPage.selectedIndex = currentPage - 1;
 };
 
+const applyFilters = (deals, filterType) => {
+  switch (filterType) {
+    case 'best-discount':
+      return deals.filter(deal => deal.discount >= 50);
+    case 'most-commented':
+      return deals.filter(deal => deal.comments >= 15);
+    case 'hot-deals':
+      return deals.filter(deal => deal.temperature >= 100);
+      case 'favorites':
+      return deals.filter(deal => favorites.has(deal.uuid));
+    default:
+      return deals;
+  }
+};
+
+const applySorting = (deals, sortType) => {
+  switch (sortType) {
+    case 'price-asc':
+      return deals.sort((a, b) => a.price - b.price);
+    case 'price-desc':
+      return deals.sort((a, b) => b.price - a.price);
+    case 'date-newest':
+      return deals.sort((a, b) => new Date(b.date) - new Date(a.date));
+    case 'date-oldest':
+      return deals.sort((a, b) => new Date(a.date) - new Date(b.date));
+    default:
+      return deals;
+  }
+};
+
 /**
  * Render lego set ids selector
  * @param  {Array} lego set ids
  */
-const renderLegoSetIds = deals => {
+const renderLegoSetIds = (deals) => {
   const ids = getIdsFromDeals(deals);
   const options = ids.map(id => 
     `<option value="${id}">${id}</option>`
   ).join('');
-
+  
   selectLegoSetIds.innerHTML = options;
 };
+
+const renderFavorites = () => {
+  const favoriteDeals = currentDeals.filter(deal => favorites.has(deal.uuid));
+  const favoriteDealsHtml = favoriteDeals
+    .map(deal => `
+      <div class="deal" id="${deal.uuid}">
+        <span>${deal.id}</span>
+        <a href="${deal.link}">${deal.title}</a>
+        <span>${deal.price}</span>
+      </div>
+    `)
+    .join('');
+  document.querySelector('#favorites-list').innerHTML = favoriteDealsHtml;
+};
+
+
 
 /**
  * Render page selector
@@ -130,10 +202,14 @@ const renderIndicators = pagination => {
   spanNbDeals.innerHTML = count;
 };
 
+
 const render = (deals, pagination) => {
-  renderDeals(deals);
+  const filteredDeals = applyFilters(deals, selectFilter.value);
+  const sortedDeals = applySorting(filteredDeals, selectSort.value);
+  renderDeals(sortedDeals);
   renderPagination(pagination);
   renderIndicators(pagination);
+  spanNbDeals.innerHTML = filteredDeals.length; // Afficher le nombre de deals après filtre
   renderLegoSetIds(deals)
 };
 
@@ -145,11 +221,38 @@ const render = (deals, pagination) => {
  * Select the number of deals to display
  */
 selectShow.addEventListener('change', async (event) => {
-  const deals = await fetchDeals(currentPagination.currentPage, parseInt(event.target.value));
-
+  const size = parseInt(event.target.value);
+  const deals = await fetchDeals(currentPagination.currentPage, size);
   setCurrentDeals(deals);
+  render(deals.result, deals.meta); // Utilise les données mises à jour
+});
+
+
+selectFilter.addEventListener('change', () => {
   render(currentDeals, currentPagination);
 });
+
+selectSort.addEventListener('change', () => {
+  render(currentDeals, currentPagination);
+});
+
+document.addEventListener('click', (event) => {
+  if (event.target && event.target.classList.contains('favorite-btn')) {
+    const uuid = event.target.dataset.uuid;
+    toggleFavorite(uuid);
+    render(currentDeals, currentPagination); // Rafraîchir l'affichage des deals
+  }
+});
+
+
+selectPage.addEventListener('change', async (event) => {
+  const page = parseInt(event.target.value);
+  const size = parseInt(selectShow.value);
+  const deals = await fetchDeals(page, size);
+  setCurrentDeals(deals);
+  render(deals.result, deals.meta);
+});
+
 
 document.addEventListener('DOMContentLoaded', async () => {
   const deals = await fetchDeals();
