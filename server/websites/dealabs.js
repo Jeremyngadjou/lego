@@ -1,6 +1,26 @@
 const fetch = require('node-fetch');
 const cheerio = require('cheerio');
 
+const puppeteer = require('puppeteer');
+
+module.exports.scrape = async (url) => {
+  const browser = await puppeteer.launch({ headless: true });
+  const page = await browser.newPage();
+
+  await page.setUserAgent(
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36'
+  );
+
+  await page.goto(url, { waitUntil: 'load', timeout: 0 });
+
+  const content = await page.content(); // Récupère le HTML rendu
+  await browser.close();
+
+  return parse(content);
+};
+
+
+
 /**
  * Parse webpage data response
  * @param  {String} data - html response

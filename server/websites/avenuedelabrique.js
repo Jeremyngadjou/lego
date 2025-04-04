@@ -23,20 +23,9 @@ const parse = data => {
           .text()
       ));
 
-      const image = $(element)
-      .find('img')
-      .attr('src');
-
-      const ref = $(element)
-      .find('span.prodl-ref')
-      .text();
-
-
       return {
         discount,
         price,
-        image,
-        ref,
         'title': $(element).attr('title'),
       };
     })
