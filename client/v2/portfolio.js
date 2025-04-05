@@ -189,7 +189,7 @@ const updateIndicatorsForDealAndSet = (deal) => {
     spanP50SalesPrice.innerText = p50;
 
     // Calcul de la lifetime (période écoulée depuis la première vente)
-    const firstDate = new Date(deal[0].date);  // Date de la première vente
+    const firstDate = new Date(deal[0].published);  // Date de la première vente
     const lifetimeValue = Math.floor((new Date() - firstDate) / (1000 * 60 * 60 * 24)); // En jours
     spanLifetimeValue.innerText = lifetimeValue ? `${lifetimeValue} days` : "N/A";
   } else if (typeof deal === 'object') {
