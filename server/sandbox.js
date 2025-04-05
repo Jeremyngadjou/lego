@@ -1,21 +1,44 @@
 /* eslint-disable no-console, no-process-exit */
-const avenuedelabrique = require('./websites/dealabs');
+const path = require('path');
+const { URL } = require('url');
 
-async function sandbox (website = 'https://www.dealabs.com/') {
+/**
+ * Map domain names to their corresponding scraper modules
+ */
+const scrapers = {
+  'www.avenuedelabrique.com': 'avenuedelabrique',
+  'www.dealabs.com': 'dealabs'
+};
+
+async function sandbox(website) {
   try {
-    console.log(`🕵️‍♀️  browsing ${website} website`);
+    if (!website) {
+      console.error('❌ Please provide a website URL.');
+      process.exit(1);
+    }
 
-    const deals = await avenuedelabrique.scrape(website);
+    const domain = new URL(website).hostname;
 
-    console.log(deals);
-    console.log('done');
+    const scraperName = scrapers[domain];
+
+    if (!scraperName) {
+      console.error(`❌ No scraper available for ${domain}`);
+      process.exit(1);
+    }
+
+    const scraper = require(path.join(__dirname, 'websites', scraperName));
+    console.log(`🕵️‍♀️ Scraping ${website} using ${scraperName}.js`);
+
+    // Appel de la fonction scrape avec l'URL
+    await scraper.scrape(website);
+
+    console.log('✅ Done');
     process.exit(0);
   } catch (e) {
-    console.error(e);
+    console.error('💥 Error:', e);
     process.exit(1);
   }
 }
 
-const [,, eshop] = process.argv;
-
-sandbox(eshop);
+const [,, url] = process.argv;
+sandbox(url);
