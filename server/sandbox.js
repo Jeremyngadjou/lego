@@ -1,26 +1,37 @@
 /* eslint-disable no-console, no-process-exit */
 const path = require('path');
+const { URL } = require('url');
 
-// Changement ici : récupère dynamiquement le bon module
-async function sandbox (input) {
+/**
+ * Map domain names to their corresponding scraper modules
+ */
+const scrapers = {
+  'www.avenuedelabrique.com': 'avenuedelabrique',
+  'www.dealabs.com': 'dealabs'
+};
+
+async function sandbox(website) {
   try {
-    const websiteName = input.includes('dealabs')
-      ? 'dealabs'
-      : input.includes('avenuedelabrique')
-        ? 'avenuedelabrique'
-        : 'vinted';
+    if (!website) {
+      console.error('❌ Please provide a website URL.');
+      process.exit(1);
+    }
 
-    const scraper = require(`./websites/${websiteName}`);
+    const domain = new URL(website).hostname;
 
-    const param = websiteName === 'vinted'
-      ? input.replace(/^https?:\/\/[^\/]+\/?/, '') // ex: "lego 75347"
-      : input;
+    const scraperName = scrapers[domain];
 
-    console.log(`🕵️‍♀️ Scraping with ${websiteName}.js for ${param}...`);
+    if (!scraperName) {
+      console.error(`❌ No scraper available for ${domain}`);
+      process.exit(1);
+    }
 
-    const deals = await scraper.scrape(param);
+    const scraper = require(path.join(__dirname, 'websites', scraperName));  // Charge le bon scraper
+    console.log(`🕵️‍♀️ Scraping ${website} using ${scraperName}.js`);
 
-    console.log(deals);
+    // Appel de la fonction scrape avec l'URL
+    await scraper.scrape(website);  // Cette fonction inclut l'insertion MongoDB
+
     console.log('✅ Done');
     process.exit(0);
   } catch (e) {
@@ -29,6 +40,5 @@ async function sandbox (input) {
   }
 }
 
-const [,, input] = process.argv;
-
-sandbox(input || 'lego 75347');
+const [,, url] = process.argv;
+sandbox(url);

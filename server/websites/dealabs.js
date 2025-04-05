@@ -1,6 +1,11 @@
 const fetch = require('node-fetch');
 const cheerio = require('cheerio');
+const { MongoClient } = require('mongodb');  // Import de MongoClient
 const fs = require('fs');
+
+// Configuration MongoDB
+const MONGODB_URI = 'mongodb+srv://admin:admin1234@lego.mjxy4lw.mongodb.net/?retryWrites=true&w=majority&appName=Lego';  // Remplace <user>, <password>, <cluster-url>
+const MONGODB_DB_NAME = 'lego';  // Le nom de ta base de données
 
 /**
  * Parse the HTML from Dealabs
@@ -12,22 +17,44 @@ const parse = html => {
   const deals = [];
 
   $('article.thread').each((i, el) => {
-    const title = $(el).find('a.thread-title').text().trim();
-    const priceText = $(el).find('.thread-price').text().trim();
-    const linkPart = $(el).find('a.thread-title').attr('href');
-    const link = `https://www.dealabs.com${linkPart}`;
-    const store = $(el).find('.cept-merchant-name').text().trim();
+    const title = $(el).find('a.cept-tt.thread-link').text().trim();
+    const priceText = $(el).find('span.text--b.size--all-xl.size--fromW3-xxl.thread-price').text().trim();
+    
+    // Nettoyage et conversion du prix
+    let price = null;
+    if (priceText) {price = parseFloat(priceText.replace(/[^\d,.-]/g, '').replace(',', '.'));}
 
-    const price = parseFloat(priceText.replace(/[^\d,.]/g, '').replace(',', '.'));
-
-    deals.push({ title, price, store, link });
+    const link = $(el).find('a.cept-tt.thread-link').attr('href');
+    const datePosted = $(el).find('span.size--all-s').text().trim() || 'Date non disponible';
+    deals.push({ title, price, link, datePosted });
   });
 
   return deals;
 };
 
 /**
- * Scrape the webpage and save the deals to a JSON file
+ * Fonction pour insérer les données dans MongoDB
+ * @param {Array} deals - Liste des deals à insérer
+ */
+const insertDealsToMongoDB = async (deals) => {
+  const client = await MongoClient.connect(MONGODB_URI);
+  const db = client.db(MONGODB_DB_NAME);  // Sélectionne la base de données
+  
+  try {
+    // Insertion des deals dans la collection 'deals'
+    const collection = db.collection('deals');
+    const result = await collection.insertMany(deals);
+
+    console.log(`✅ ${result.insertedCount} deals inserted to MongoDB`);  // Affiche combien de deals ont été insérés
+  } catch (err) {
+    console.error('❌ Failed to insert into MongoDB', err);
+  } finally {
+    await client.close();  // Ferme la connexion à MongoDB
+  }
+};
+
+/**
+ * Scrape the webpage, parse it and save the deals to MongoDB
  * @param {string} url - The URL to scrape
  */
 const scrape = async (url) => {
@@ -47,8 +74,10 @@ const scrape = async (url) => {
     console.log('Liste des deals récupérés :');
     console.log(deals);  // Affiche toutes les offres récupérées
 
-    fs.writeFileSync('deals.json', JSON.stringify(deals, null, 2), 'utf-8');
-    console.log(`✅ ${deals.length} deals saved to deals.json`);
+    // Insérer les deals dans MongoDB
+    await insertDealsToMongoDB(deals);
+
+    console.log('✅ Done');
   } catch (err) {
     console.error('❌ Scraping failed:', err);  // Affiche l'erreur si le scraping échoue
   }
