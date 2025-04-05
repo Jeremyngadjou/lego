@@ -4,11 +4,19 @@
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
+      
         {
             "type": "chrome",
             "request": "launch",
             "name": "Launch Chrome against localhost",
             "url": "C:/Users/Ngadj/Documents/git project/lego/client/v2/index.html",
+            "webRoot": "${workspaceFolder}"
+        },
+   /**      {
+            "name": "Launch Chrome",
+            "request": "launch",
+            "type": "chrome",
+            "url": "http://localhost:8092",
             "webRoot": "${workspaceFolder}"
         },
 
@@ -20,5 +28,6 @@
             "url": "file:///C:/Users/Ngadj/Documents/Informatique/lego/client/v2/index.html",
             "webRoot": "${workspaceFolder}"
         }
+            **/
     ]
 }
