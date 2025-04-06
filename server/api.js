@@ -46,88 +46,6 @@ app.get('/deals', async (request, response) => {
 });
 
 
-
-// Route GET /deals/:id
-app.get('/deals/:id', async (req, res) => {
-  try {
-    const dealId = req.params.id;
-    
-    // Convertir l'ID en ObjectId si nécessaire
-    const objectId = new ObjectId(dealId);
-
-    // Chercher dans la base de données avec l'ObjectId
-    const deal = await db.collection('deals').findOne({ _id: objectId });
-
-    if (!deal) {
-      return res.status(404).json({ message: "Deal not found" });
-    }
-
-    res.json(deal);
-  } catch (error) {
-    console.error('Error fetching deal:', error);
-    res.status(500).json({ message: "Server error" });
-  }
-});
-
-
-app.post('/deals', async (req, res) => {
-  try {
-    const { title, link, datePosted, price } = req.body;
-
-    // Vérifier si toutes les informations nécessaires sont présentes
-    if (!title || !link || !datePosted || !price) {
-      return res.status(400).json({ message: 'Missing required fields' });
-    }
-
-    const newDeal = {
-      title,
-      price,
-      link,
-      datePosted
-    };
-
-    // Insérer le deal dans la base de données
-    const result = await db.collection('deals').insertOne(newDeal);
-
-    if (!result.acknowledged) {
-      return res.status(500).json({ message: 'Failed to insert deal' });
-    }
-
-    // Utiliser result.insertedId pour obtenir l'ID du deal inséré
-    res.status(201).json({
-      message: 'Deal created successfully',
-      deal: { ...newDeal, _id: result.insertedId }  // Inclure l'ID du deal dans la réponse
-    });
-
-  } catch (error) {
-    console.error('Error inserting deal:', error);  // Afficher l'erreur détaillée dans les logs
-    res.status(500).json({ message: 'Internal Server Error', error: error.message });
-  }
-});
-
-
-app.delete('/deals/:id', async (request, response) => {
-  const { id } = request.params;
-
-  try {
-    // Convertir l'ID en ObjectId
-    const objectId = new ObjectId(id);
-
-    // Utiliser ObjectId pour rechercher et supprimer le deal
-    const result = await db.collection('deals').deleteOne({ _id: objectId });
-
-    if (result.deletedCount === 0) {
-      return response.status(404).json({ message: 'Deal not found' });
-    }
-
-    response.json({ message: 'Deal deleted' });
-  } catch (error) {
-    console.error('❌ Error deleting deal', error);
-    response.status(500).json({ message: 'Internal Server Error' });
-  }
-});
-
-
 app.get('/deals/search', async (req, res) => {
   const { title, limit, price, date, filterBy } = req.query;  // Destructure and set default values
   const query = {};  // Query to be passed to MongoDB
@@ -184,12 +102,27 @@ app.get('/deals/search', async (req, res) => {
 });
 
 
+// Route GET /deals/:id
+app.get('/deals/:id', async (req, res) => {
+  try {
+    const dealId = req.params.id;
+    
+    // Convertir l'ID en ObjectId si nécessaire
+    const objectId = new ObjectId(dealId);
 
+    // Chercher dans la base de données avec l'ObjectId
+    const deal = await db.collection('deals').findOne({ _id: objectId });
 
+    if (!deal) {
+      return res.status(404).json({ message: "Deal not found" });
+    }
 
-
-
-
+    res.json(deal);
+  } catch (error) {
+    console.error('Error fetching deal:', error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
 
 
 // Lancer le serveur
